@@ -1,0 +1,102 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+sns.set()
+import warnings
+warnings.simplefilter("ignore")
+data=pd.read_csv(r"C:\Users\Akash\Project-HousePrice\REVIEW-1\Data\processed_dataset.csv")
+# preview the data
+data.head(5)
+# preview the data
+data.tail(5)
+data.info()
+data.describe().T
+sns.set(style="whitegrid", font_scale=1)
+
+plt.figure(figsize=(13,13))
+plt.title('Pearson Correlation Matrix',fontsize=25)
+sns.heatmap(data.corr(),linewidths=0.25,vmax=0.7,square=True,cmap="GnBu",linecolor='w',
+            annot=True, annot_kws={"size":7}, cbar_kws={"shrink": .7})
+price_corr = data.corr()['price'].sort_values(ascending=False)
+print(price_corr)
+f, axes = plt.subplots(1, 2,figsize=(15,5))
+sns.distplot(data['price'], ax=axes[0])
+sns.scatterplot(x='price',y='sqft_living', data=data, ax=axes[1])
+sns.despine(bottom=True, left=True)
+axes[0].set(xlabel='Price in millions [USD]', ylabel='', title='Price Distribuition')
+axes[1].set(xlabel='Price', ylabel='Sqft Living', title='Price vs Sqft Living')
+axes[1].yaxis.set_label_position("right")
+axes[1].yaxis.tick_right()
+sns.set(style="whitegrid", font_scale=1)
+
+f, axes = plt.subplots(1, 2,figsize=(15,5))
+sns.boxplot(x=data['bedrooms'],y=data['price'], ax=axes[0])
+sns.boxplot(x=data['floors'],y=data['price'], ax=axes[1])
+sns.despine(bottom=True, left=True)
+axes[0].set(xlabel='Bedrooms', ylabel='Price', title='Bedrooms vs Price Box Plot')
+axes[1].set(xlabel='Floors', ylabel='Price', title='Floors vs Price Box Plot')
+    f, axe = plt.subplots(1, 1,figsize=(15,5))
+    data.groupby('month').mean()['price'].plot()
+    sns.despine(left=True, bottom=True)
+    axe.set(xlabel='Month', ylabel='Price', title='Price Trends')
+from sklearn.model_selection import train_test_split
+# Independent features:
+X = data.drop('price',axis=1)
+
+# Dependent features:
+y = data['price']
+
+# Split
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.3,random_state=101)
+y
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+
+X
+feature=SelectKBest(score_func=chi2,k=10)
+fit=feature.fit(X,y)
+print(X_train.shape)
+print(X_test.shape)
+print(y_train.shape)
+print(y_test.shape)
+from sklearn.preprocessing import MinMaxScaler
+scaler = MinMaxScaler()
+
+# fit and transfrom
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# everything has been scaled between 1 and 0
+print('Max: ',X_train.max())
+print('Min: ', X_train.min())
+from sklearn.ensemble import RandomForestRegressor
+RF_score=[]
+RF=RandomForestRegressor()
+RF.fit(X_train,y_train)
+RF_score.append(RF.score(X_test,y_test))
+print("The score for RandomForestRegressor is {}% :".format(RF_score[0]*100))
+from sklearn.metrics import mean_absolute_error,mean_squared_error,r2_score
+# Evaluation on Test data:
+# predictions on the test set
+predictions = RF.predict(X_test)
+
+print('MAE: ',mean_absolute_error(y_test,predictions))
+print('MSE: ',mean_squared_error(y_test,predictions))
+print('RMSE: ',np.sqrt(mean_squared_error(y_test,predictions)))
+import joblib
+joblib.dump(RF,open("C:/Users/Akash/Project-HousePrice/Final/random.pkl",'wb'))
+# features of new house
+single_house = data.drop('price',axis=1).iloc[34]
+print(f'Features of new house:\n{single_house}')
+
+# reshape the numpy array and scale the features
+single_house = scaler.transform(single_house.values.reshape(-1, 19))
+
+# run the model and get the price prediction
+print('\nPrediction Price:',RF.predict(single_house)[0])
+
+# original price
+print('\nOriginal Price:',data.iloc[3491]['price'])
