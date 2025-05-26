@@ -1,0 +1,28 @@
+import pandas as pd
+import numpy as np
+import os
+
+
+#Reading the Raw Data file
+data=pd.read_csv(r'C:\Users\Akash\OneDrive\Documents\Desktop\Data\Raw-unprocessed-house-data.csv')
+
+
+#PreProcessing
+#Preprocessing Step-1 : Replacing Null "?" Values with np.nan
+data= data.replace('?', np.nan)
+
+#Preprocessing Step-2 : Dropping ID and Zipcode columns 
+data = data.drop('id', axis=1)
+data = data.drop('zipcode',axis=1)
+
+#Preprocessing Step-3 : Splitting the data to get Month and Year separately
+data['date'] = pd.to_datetime(data['date'])
+data['month'] = data['date'].apply(lambda date:date.month)
+data['year'] = data['date'].apply(lambda date:date.year)
+data = data.drop('date',axis=1)
+
+# Check the new columns
+print(data.columns.values)
+
+data.to_csv(os.path.join('C:\Users\Akash\OneDrive\Documents\Desktop\Data/Processed_dataset.csv'), index=False)
+
